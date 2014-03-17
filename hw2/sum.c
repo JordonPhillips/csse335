@@ -4,7 +4,8 @@
 #define BUFFSIZE 1024
 
 int main(int argc, char* argv[]) {
-    int i, isInt, n, nsum = 0;
+    int i, isInt, n;
+    long long unsigned nsum = 0;
     char buffer[BUFFSIZE];
 
     for (i = 0; i < N; i++) {
@@ -18,6 +19,6 @@ int main(int argc, char* argv[]) {
         nsum += n;
     }
 
-    printf("The sum of those numbers is %d.\n", nsum);
+    printf("The sum of those numbers is %llu.\n", nsum);
     return 0;
 }
