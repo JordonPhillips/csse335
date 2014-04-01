@@ -10,27 +10,24 @@ int main(int argc, char** argv) {
 
   if (rank == 0) {
     int i;
-    int* n;
-    while(1) {
-      n = (int*)malloc(sizeof(int));
+    int n = 0;
+    while(n >= 0) {
       printf("Input: ");
       fflush(stdout);
       scanf("%d", n);
-      if (*n < 0) break;
 
       for (i = 1; i < total_procs; i++) {
-        MPI_Send(n,1,MPI_INT,i,0,MPI_COMM_WORLD);
+        MPI_Send(&n,1,MPI_INT,i,0,MPI_COMM_WORLD);
       }
-      free(n);
     }
+
   } else {
     MPI_Status status;
-    int recv;
-    while(1) {
+    int recv = 0;
+    while(recv >= 0) {
       MPI_Recv(&recv,1,MPI_INT,MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
       printf("Rank: %d Received: %d\n",rank,recv);
       fflush(stdout);
-      if (recv < 0) break;
     }
   }
 
