@@ -25,11 +25,13 @@ int main(int argc, char** argv) {
     }
   } else {
     MPI_Status status;
-    int* recv = (int*)malloc(sizeof(int));
-    MPI_Recv(recv,1,MPI_INT,MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
-    printf("Rank: %d Received: %d",rank,*recv);
-    fflush(stdout);
-    free(recv);
+    int recv;
+    while(1) {
+      MPI_Recv(&recv,1,MPI_INT,MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
+      printf("Rank: %d Received: %d\n",rank,recv);
+      fflush(stdout);
+      if (recv < 0) break;
+    }
   }
 
   MPI_Finalize();
