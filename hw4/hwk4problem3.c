@@ -52,6 +52,7 @@ void source(int rank, int dest_rank, char** argv) {
     total *= MPI_Wtick();
 
     total = size/(2*total);
+    total /= 1048580;
 
     printf("Data Size: %dB\n",size);
     printf("Number of Samples: %d\n",samples);
