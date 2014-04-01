@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
     while(n >= 0) {
       printf("Input: ");
       fflush(stdout);
-      scanf("%d", n);
+      scanf("%d", &n);
 
       for (i = 1; i < total_procs; i++) {
         MPI_Send(&n,1,MPI_INT,i,0,MPI_COMM_WORLD);
