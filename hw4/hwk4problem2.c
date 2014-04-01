@@ -36,7 +36,7 @@ void slave(int rank, int total_procs) {
     MPI_Status status;
     MPI_Recv(&n,1,MPI_INT,rank-1,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
 
-    printf("Rank: %d Sender: %d Data %d", rank, rank-1, n);
+    printf("Rank: %d Sender: %d Data %d\n", rank, rank-1, n);
     fflush(stdout);
 
     if (total_procs - rank > 1) {
