@@ -14,6 +14,7 @@ int main(int argc, char** argv) {
     while(1) {
       n = (int*)malloc(sizeof(int));
       printf("Input: ");
+      fflush(stdout);
       scanf("%d", n);
       if (*n < 0) break;
 
@@ -27,6 +28,7 @@ int main(int argc, char** argv) {
     int* recv = (int*)malloc(sizeof(int));
     MPI_Recv(recv,1,MPI_INT,MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
     printf("Rank: %d Received: %d",rank,*recv);
+    fflush(stdout);
     free(recv);
   }
 
