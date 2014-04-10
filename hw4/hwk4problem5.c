@@ -51,6 +51,7 @@ void master(int total_procs, int n) {
                 for (k = 0; k < n; k++) {
                     vars[2]=k;
                     p = p%(total_procs-1);
+		    printf("Sending (%d,%d,%d) to %d\n",vars[0],vars[1],vars[2],p);
                     MPI_Send(vars,3,MPI_INT,p,0,MPI_COMM_WORLD);
                     p++;
                 }
@@ -93,6 +94,7 @@ void slave(float h) {
         if (vars[0] < 0) break;
 
         tmp = shekel(vars[0]*h,vars[1]*h,vars[2]*h, shekel_vars);
+	printf("Shekel: (%d,%d,%d) => %f\n",vars[0],vars[1],vars[2]);
 
         if (max < tmp) {
             max = tmp;
@@ -100,7 +102,9 @@ void slave(float h) {
         }
     }
 
-    float max_all[4] = {max, max_vars[0], max_vars[1], max_vars[2]};
+    float max_all[4] = {max, (float)max_vars[0], (float)max_vars[1], (float)max_vars[2]};
+    printf("Local max is %f at point (%f,%f,%f)\n",max_all[0],max_all[1],max_all[2],max_all[3]);
+    fflush(stdout);
     MPI_Send(max_all,4,MPI_FLOAT,0,0,MPI_COMM_WORLD);
 }
 
