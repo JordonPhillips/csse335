@@ -1,6 +1,9 @@
 #include <mpi.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include "MY_MPI.h"
+
+#define NUM_INTS 1
 
 void master(int total_procs);
 void slave(int rank, int total_procs);
@@ -22,7 +25,19 @@ int main(int argc, char** argv) {
 }
 
 void master(int total_procs) {
+    int *data = (int*)malloc((total_procs-1)*NUM_INTS*sizeof(int));
+    int i;
+    for (i = 0; i < total_procs - 1; i++) {
+        data[i] = i+1;
+    }
+
+    MY_Scatter(data, 1, MPI_INT, NULL, 0, NULL, 0, MPI_COMM_WORLD);
+
+    fscanf(stdin,"%d",&i);
+    free(data);
 }
 
 void slave(int rank, int total_procs) {
+    int *data = (int*)malloc(NUM_INTS*sizeof(int));
+    MY_Scatter(NULL, 0, NULL, data, NUM_INTS, MPI_INT, 0, MPI_COMM_WORLD);
 }
