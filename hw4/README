@@ -1,0 +1,10 @@
+STATUS OF EACH PROBLEM:
+
+PROBLEM 1 -> Working as expected
+PROBLEM 2 -> Working as expected
+PROBLEM 3 -> Working, though I don't have the conversion to MB/s quite right.
+PROBLEM 4 -> Working as expected
+PROBLEM 5 -> Not working, but close. I distribute the T params evenly and it
+             seems that the shekel function is working correctly. However, I
+             am not able to wait on all of the nodes to finish, for whatever
+             reason, and so I don't get the correct value at the end.
