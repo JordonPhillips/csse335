@@ -16,14 +16,14 @@ void MY_Scatter(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     MPI_Comm_size(comm, &total_procs);
     MPI_Type_size(sendtype, &send_size);
 
-    void *send;
     send_size *= sendcount;
     MPI_Datatype *data = (MPI_Datatype*) sendbuf;
+    MPI_Datatype *send = (MPI_Datatype*)malloc(send_size);
 
     int i;
     for (i = 0; i < total_procs; i++) {
         if (i != root) {
-            send = realloc(send, send_size);
+            send = (MPI_Datatype*)realloc(send, send_size);
             memcpy(send, data[i*send_size], send_size);
 
             printf("Sending data from %d to %d.\n", rank, i);
