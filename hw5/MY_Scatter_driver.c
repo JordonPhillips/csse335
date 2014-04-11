@@ -32,8 +32,6 @@ void master(int total_procs) {
         data[i] = i+1;
     }
 
-    printf("Sending %d ints to %d processes, %d in total.\n", NUM_INTS, total_procs-1, total_num_ints);
-    fflush(stdout);
     MY_Scatter(data, NUM_INTS, MPI_INT, NULL, 0, NULL, 0, MPI_COMM_WORLD);
     free(data);
 
