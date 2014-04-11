@@ -1,7 +1,7 @@
 CC=mpicc
 CFLACGS=
 
-all: scatter gather bcast alltoall
+all: scatter gather bcast alltoall reduce
 
 scatter: MY_Scatter.c MY_Scatter_driver.c
 	$(CC) $(CFLAGS) MY_Scatter.c MY_Scatter_driver.c -o scatter
@@ -15,7 +15,10 @@ bcast: MY_Broadcast.c MY_Broadcast_driver.c
 alltoall: MY_AllToAllBroadcast.c MY_AllToAllBroadcast_driver.c
 	$(CC) $(CFLAGS) MY_AllToAllBroadcast.c MY_AllToAllBroadcast_driver.c -o alltoall
 
+reduce: MY_Reduce.c MY_Reduce_driver.c
+	$(CC) $(CFLAGS) MY_Reduce.c MY_Reduce_driver.c -o reduce
+
 clean:
-	rm scatter gather bcast alltoall
+	rm scatter gather bcast alltoall reduce
 
 ctest: all clean
