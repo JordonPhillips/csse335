@@ -20,16 +20,16 @@ void MY_Scatter(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     void *data = sendbuf;
     void *send = malloc(send_size);
 
-    int i, j = 0;
+    int i, k, j = 0;
     for (i = 0; i < total_procs; i++) {
         if (i != root) {
-	        printf("Copying data\n");
-	        fflush(stdout);
 	        data = (char*)data + (j*send_size);
             memcpy(send, data, send_size);
 
-            printf("Sending data from %d to %d.\n", rank, i);
+            for (k=0;k<sendcount;k++)
+                printf("Seding %d to rand %d", *((int*)data+k), i);
             fflush(stdout);
+
             MPI_Send(send, sendcount, sendtype, i, MY_SCATTER_TAG, comm);
             j++;
         }
@@ -39,8 +39,6 @@ void MY_Scatter(void *sendbuf, int sendcount, MPI_Datatype sendtype,
   } else {
     MPI_Status status;
     MPI_Recv(recvbuf,recvcount,recvtype,root,MY_SCATTER_TAG,comm,&status);
-    printf("Rank %d recieved data.\n", rank);
-    fflush(stdout);
   }
 }
 
