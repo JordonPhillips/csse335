@@ -27,7 +27,7 @@ void MY_Scatter(void *sendbuf, int sendcount, MPI_Datatype sendtype,
             memcpy(send, data, send_size);
 
             for (k=0;k<sendcount;k++)
-                printf("Seding %d to rand %d", *((int*)data+k), i);
+                printf("Seding %d to rank %d\n", *((int*)data+k), i);
             fflush(stdout);
 
             MPI_Send(send, sendcount, sendtype, i, MY_SCATTER_TAG, comm);

@@ -25,14 +25,15 @@ int main(int argc, char** argv) {
 }
 
 void master(int total_procs) {
-    int *data = (int*)malloc((total_procs-1)*NUM_INTS*sizeof(int));
+    int total_num_ints = (total_procs-1)*NUM_INTS;
+    int *data = (int*)malloc(total_num_ints*sizeof(int));
     int i, j;
-    for (i = 0; i < total_procs - 1; i++) {
-        for (j = 0; j < NUM_INTS; j++) {
-            data[i+j] = i+j+1;
-        }
+    for (i = 0; i < total_num_ints; i++) {
+        data[i] = i+1;
     }
 
+    printf("Sending %d ints to %d processes, %d in total.\n", NUM_INTS, total_procs-1, total_num_ints);
+    fflush(stdout);
     MY_Scatter(data, NUM_INTS, MPI_INT, NULL, 0, NULL, 0, MPI_COMM_WORLD);
     free(data);
 
