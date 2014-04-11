@@ -32,6 +32,9 @@ int main(int argc, char** argv) {
     printf("]\n");
   }
 
+  free(send);
+  free(recv);
+
   MPI_Finalize();
   return 0;
 }

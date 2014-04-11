@@ -25,8 +25,10 @@ void MY_Scatter(void *sendbuf, int sendcount, MPI_Datatype sendtype,
         if (i != root) {
             memcpy(send, data, send_size);
             MPI_Send(send, sendcount, sendtype, i, MY_SCATTER_TAG, comm);
-            data = (char*)data + send_size;
+        } else {
+            memcpy(recvbuf, data, send_size);
         }
+        data = (char*)data + send_size;
     }
 
     free(send);

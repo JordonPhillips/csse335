@@ -25,20 +25,24 @@ int main(int argc, char** argv) {
 }
 
 void master(int total_procs) {
-    int total_num_ints = (total_procs-1)*NUM_INTS;
+    int total_num_ints = total_procs*NUM_INTS;
     int *data = (int*)malloc(total_num_ints*sizeof(int));
     int i, j;
     for (i = 0; i < total_num_ints; i++) {
         data[i] = i+1;
     }
 
-    MY_Scatter(data, NUM_INTS, MPI_INT, NULL, 0, NULL, 0, MPI_COMM_WORLD);
-    free(data);
+    int *recv = (int*)malloc(NUM_INTS*sizeof(int));
+
+    MY_Scatter(data, NUM_INTS, MPI_INT, recv, NUM_INTS, MPI_INT, 0, MPI_COMM_WORLD);
 
     MPI_Status status;
     for (i = 1; i < total_procs; i++) {
         MPI_Recv(&j, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
     }
+
+    free(data);
+    free(recv);
 }
 
 void slave(int rank, int total_procs) {
