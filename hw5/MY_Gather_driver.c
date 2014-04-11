@@ -35,7 +35,7 @@ void master(int total_procs) {
     for (i = 0; i < total_ints; i++) {
         printf("\t%d,\n",nums[i]);
     }
-    printf("]");
+    printf("]\n");
     fflush(stdout);
 
     free(nums);
