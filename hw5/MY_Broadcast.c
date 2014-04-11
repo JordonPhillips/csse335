@@ -7,18 +7,27 @@ void MY_Broadcast(void *buffer, int count, MPI_Datatype datatype,
     int rank;
     MPI_Comm_rank(comm, &rank);
 
-    if (rank == root) {
-        int total_procs;
-        MPI_Comm_size(comm, &total_procs);
+    int total_procs;
+    MPI_Comm_size(comm, &total_procs);
 
-        int i;
-        for (i = 0; i < total_procs; i++) {
-            if (i != root)
-                MPI_Send(buffer, count, datatype, i, MY_BROADCAST_TAG, comm);
-        }
+    if (rank == root) {
+        if (total_procs > 1)
+            MPI_Send(buffer, count, datatype, 1, MY_BROADCAST_TAG, comm);
+        if (total_procs > 2)
+            MPI_Send(buffer, count, datatype, 2, MY_BROADCAST_TAG, comm);
     } else {
+        int sender = rank%2 == 0 ? ((rank/2)-1) : ((rank-1)/2);
         MPI_Status status;
-        MPI_Recv(buffer, count, datatype, root, MY_BROADCAST_TAG, comm, &status);
+        MPI_Recv(buffer, count, datatype, sender, MY_BROADCAST_TAG, comm, &status);
+
+        int dest = (2*rank)+1;
+        if (dest < total_procs) {
+            MPI_Send(buffer, count, datatype, dest, MY_BROADCAST_TAG, comm);
+
+            dest += 1;
+            if (dest < total_procs)
+                MPI_Send(buffer, count, datatype, dest, MY_BROADCAST_TAG, comm);
+        }
     }
 }
 
