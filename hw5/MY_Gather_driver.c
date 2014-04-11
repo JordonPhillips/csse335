@@ -28,7 +28,7 @@ void master(int total_procs) {
     int total_ints = NUM_INTS*(total_procs-1);
     int *nums = (int*)malloc(total_ints*sizeof(int));
 
-    MPI_Gather(NULL, 0, NULL, nums, NUM_INTS, MPI_INT, 0, MPI_COMM_WORLD);
+    MY_Gather(NULL, 0, NULL, nums, NUM_INTS, MPI_INT, 0, MPI_COMM_WORLD);
 
     printf("Master recieved: [\n");
     int i;
@@ -47,6 +47,6 @@ void slave(int rank, int total_procs) {
     for (i = 0; i < NUM_INTS; i++) {
         nums[i] = (NUM_INTS*(rank-1))+i+1;
     }
-    MPI_Gather(nums,NUM_INTS,MPI_INT,NULL,0,NULL,0,MPI_COMM_WORLD);
+    MY_Gather(nums,NUM_INTS,MPI_INT,NULL,0,NULL,0,MPI_COMM_WORLD);
     free(nums);
 }
