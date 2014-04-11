@@ -23,8 +23,6 @@ void MY_Scatter(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     int i, k, j = 0;
     for (i = 0; i < total_procs; i++) {
         if (i != root) {
-            printf("Sendbuf: %p, Data: %p, Num: %d, Size: %d\n",sendbuf,data,j,send_size);
-	        data = (char*)data + (j*send_size);
             memcpy(send, data, send_size);
 
             for (k=0;k<sendcount;k++)
@@ -33,6 +31,7 @@ void MY_Scatter(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 
             MPI_Send(send, sendcount, sendtype, i, MY_SCATTER_TAG, comm);
             j++;
+	    data = (char*)data + send_size;
         }
     }
 
