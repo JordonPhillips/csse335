@@ -1,10 +1,12 @@
 #include <mpi.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define MY_REDUCE_TAG 51
 
 int adj_to_rank(int adj, int root, int total_procs);
+int rank_to_adj(int rank, int root, int total_procs);
 
 void MY_Reduce(void *sendbuf, void *recvbuf, int count,
     MPI_Datatype datatype, int OP, int root, MPI_Comm comm) {
@@ -12,9 +14,7 @@ void MY_Reduce(void *sendbuf, void *recvbuf, int count,
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &total_procs);
 
-    int adjusted_rank = rank - root;
-    if (adjusted_rank < 0)
-        adjusted_rank += total_procs;
+    int adjusted_rank = rank_to_adj(rank, root, total_procs);
 
     int adjusted_total = total_procs%2 == 0 ? total_procs : total_procs - 1;
     MPI_Status status;
@@ -58,5 +58,14 @@ int adj_to_rank(int adj, int root, int total_procs) {
     int rank = adj + root;
     if (rank > total_procs)
         rank -= total_procs;
+    printf("%d, %d: %d => %d\n", total_procs, root, adj, rank);
+    fflush(stdout);
     return rank;
+}
+
+int rank_to_adj(int rank, int root, int total_procs) {
+    int adj = rank - root;
+    if (adj < 0) {
+	adj += total_procs;
+    return adj;
 }
