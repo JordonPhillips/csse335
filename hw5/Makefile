@@ -8,3 +8,5 @@ scatter: MY_Scatter.c MY_Scatter_driver.c
 
 clean:
 	rm scatter
+
+ctest: all clean

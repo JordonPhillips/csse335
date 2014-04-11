@@ -36,7 +36,10 @@ void master(int total_procs) {
     MY_Scatter(data, NUM_INTS, MPI_INT, NULL, 0, NULL, 0, MPI_COMM_WORLD);
     free(data);
 
-    fscanf(stdin,"%d",&i);
+    MPI_Status status;
+    for (i = 1; i < total_procs; i++) {
+        MPI_Recv(&j, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+    }
 }
 
 void slave(int rank, int total_procs) {
@@ -48,4 +51,6 @@ void slave(int rank, int total_procs) {
         printf("Rank %d recived integer %d\n", rank, data[i]);
     }
     fflush(stdout);
+
+    MPI_Send(&i, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
 }

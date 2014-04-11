@@ -20,17 +20,18 @@ void MY_Scatter(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     void *data = sendbuf;
     void *send = malloc(send_size);
 
-    int i;
+    int i, j = 0;
     for (i = 0; i < total_procs; i++) {
         if (i != root) {
-	    printf("Copying data\n");
-	    fflush(stdout);
-	    data = (char*)data + (i*send_size);
+	        printf("Copying data\n");
+	        fflush(stdout);
+	        data = (char*)data + (j*send_size);
             memcpy(send, data, send_size);
 
             printf("Sending data from %d to %d.\n", rank, i);
             fflush(stdout);
             MPI_Send(send, sendcount, sendtype, i, MY_SCATTER_TAG, comm);
+            j++;
         }
     }
 
