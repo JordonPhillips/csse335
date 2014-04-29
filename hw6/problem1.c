@@ -9,13 +9,13 @@ void master(char* matrix_fname, char* vector_fname, char* out_fname);
 void slave();
 float **read_matrix(char* fname, int *m, int *n);
 void print_matrix(float **matrix, int m, int n);
+void write_matrix(char *fname, float* matrix, int m, int n);
 float **malloc_matrix(int rows, int cols);
 void free_matrix(float **matrix, int m);
 void MPI_matrix_vector_multiply(float *A, float *x, float *result, int n, int root, MPI_Comm comm);
 void invert_row(float *buff, float **matrix, int m, int n);
 void invert_matrix(float **buff, float **matrix, int m, int n);
 void flatten_matrix(float *buff, float **matrix, int m, int n);
-void flat_matrix_multiply(float* a, int am, int an, float *b, int bm, int bn, float *c);
 
 int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
@@ -65,12 +65,7 @@ void master(char* matrix_fname, char* vector_fname, char* out_fname) {
     if (m_rows == m_cols && v_rows == m_rows && v_cols == 1) {
         MPI_Bcast(&m_rows, 1, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_matrix_vector_multiply(flattened_matrix, inverted_vector, result, m_rows, 0, MPI_COMM_WORLD);
-
-        int i;
-        for (i = 0; i < m_rows; i++) {
-            printf("%f ", result[i]);
-        }
-        printf("\n");
+        write_matrix(out_fname, result, m_rows, v_cols);
     } else {
         printf("Invalid inputs. Matrix must be nxn (was %dx%d) and vector must"
                 " be nx1 (was %dx%d)",m_rows,m_cols,v_rows,v_cols);
@@ -85,7 +80,6 @@ void master(char* matrix_fname, char* vector_fname, char* out_fname) {
 void slave() {
     int n;
     MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
     MPI_matrix_vector_multiply(NULL, NULL, NULL, n, 0, MPI_COMM_WORLD);
 }
 
@@ -116,20 +110,6 @@ void MPI_matrix_vector_multiply(float *send_matrix, float *vector, float *result
     }
 
     MPI_Reduce(temp, result, n, MPI_FLOAT, MPI_SUM, root, comm);
-}
-
-
-
-void flat_matrix_multiply(float* a, int am, int an, float *b, int bm, int bn, float *c) {
-    int i, j, k;
-    for (i = 0; i < am; i++) {
-        for (j = 0; j < bn; j++) {
-            c[i+j*bn] = 0;
-            for (k = 0; k < bm; k++) {
-                c[i+j*bn] += a[i + k*bn] * b[k + j*bn];
-            }
-        }
-    }
 }
 
 float **read_matrix(char *fname, int *m, int *n) {
@@ -194,6 +174,22 @@ void print_matrix(float **matrix, int m, int n) {
         }
         printf("\n");
     }
+}
+
+void write_matrix(char *fname, float *matrix, int m, int n) {
+    FILE *fp = fopen(fname, "w");
+
+    fprintf(fp, "%d %d\n", m, n);
+
+    int i, j;
+    for (i = 0; i < m; i++) {
+        for (j = 0; j < n; j++) {
+            fprintf(fp, "%f ", matrix[j*n + i]);
+        }
+        fprintf(fp, "\n");
+    }
+
+    fclose(fp);
 }
 
 void invert_row(float *buff, float **matrix, int m, int n) {
