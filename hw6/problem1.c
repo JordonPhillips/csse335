@@ -3,13 +3,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BUFFSIZE 4028
+#define CHARS_PER_FLOAT 16
 
 void master(char* matrix_fname, char* vector_fname, char* out_fname);
 void slave();
 float **read_matrix(char* fname, int *m, int *n);
 void print_matrix(float **matrix, int m, int n);
+float **malloc_matrix(int rows, int cols);
 void free_matrix(float **matrix, int m);
+void MPI_matrix_vector_multiply(float *A, float *x, float *result, int n, int root, MPI_Comm comm);
+void invert_row(float *buff, float **matrix, int m, int n);
+void invert_matrix(float **buff, float **matrix, int m, int n);
+void flatten_matrix(float *buff, float **matrix, int m, int n);
+void flat_matrix_multiply(float* a, int am, int an, float *b, int bm, int bn, float *c);
 
 int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
@@ -33,19 +39,88 @@ int main(int argc, char** argv) {
 }
 
 void master(char* matrix_fname, char* vector_fname, char* out_fname) {
-    int m, n, l, w;
-    float **matrix = read_matrix(matrix_fname, &m, &n);
-    float **vector = read_matrix(vector_fname, &l, &w);
+    int m_rows, m_cols, v_rows, v_cols;
+    float **matrix = read_matrix(matrix_fname, &m_rows, &m_cols);
+    float **vector = read_matrix(vector_fname, &v_rows, &v_cols);
 
-    print_matrix(matrix, m, n);
-    print_matrix(vector, l, w);
 
-    free_matrix(vector, l);
-    free_matrix(matrix, m);
+    // Invert them so it's easier to distribute them
+    float **inverted_matrix = malloc_matrix(m_cols, m_rows);
+    float *inverted_vector = malloc(v_rows*sizeof(float));
+    invert_matrix(inverted_matrix, matrix, m_rows, m_cols);
+    invert_row(inverted_vector, vector, v_rows, 0);
+
+
+    free_matrix(vector, v_rows);
+    free_matrix(matrix, m_rows);
+
+    // Flatten the matrix to facilitate distribution
+    float *flattened_matrix = malloc(m_cols*m_rows*sizeof(float));
+    flatten_matrix(flattened_matrix, inverted_matrix, m_cols, m_rows);
+
+    free_matrix(inverted_matrix, m_cols);
+
+    float *result = malloc(m_cols*m_rows*sizeof(float));
+
+    if (m_rows == m_cols && v_rows == m_rows && v_cols == 1) {
+        MPI_Bcast(&m_rows, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_matrix_vector_multiply(flattened_matrix, inverted_vector, result, m_rows, 0, MPI_COMM_WORLD);
+    } else {
+        printf("Invalid inputs. Matrix must be nxn (was %dx%d) and vector must"
+                " be nx1 (was %dx%d)",m_rows,m_cols,v_rows,v_cols);
+        MPI_Abort(MPI_COMM_WORLD, -1);
+    }
+
+    free(flattened_matrix);
+    free(inverted_vector);
+    free(result);
 }
 
 void slave() {
+    int n;
+    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
+    MPI_matrix_vector_multiply(NULL, NULL, NULL, n, 0, MPI_COMM_WORLD);
+}
+
+void MPI_matrix_vector_multiply(float *send_matrix, float *vector, float *recv_matrix, int n, int root,  MPI_Comm comm) {
+    int rank, total_procs;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &total_procs);
+
+    int num_vals = n % total_procs == 0 ? n / total_procs : -1;
+    if (num_vals < 1) {
+        printf("Number of values is not evenly divisible by number of procedures\n");
+        return;
+    }
+
+    float x[num_vals];
+    MPI_Scatter(vector, num_vals, MPI_FLOAT, x, num_vals, MPI_FLOAT, root, comm);
+
+    float A[num_vals*n];
+    MPI_Scatter(send_matrix, num_vals*n, MPI_FLOAT, A, num_vals*n, MPI_FLOAT, root, comm);
+
+    float temp[num_vals];
+    int i, j;
+    for (i = 0; i < num_vals; i++) {
+        temp[i] = 0;
+        for (j = 0; j < n; j++) {
+            temp[i] += x[i] * A[i*n + j];
+        }
+    }
+
+}
+
+void flat_matrix_multiply(float* a, int am, int an, float *b, int bm, int bn, float *c) {
+    int i, j, k;
+    for (i = 0; i < am; i++) {
+        for (j = 0; j < bn; j++) {
+            c[i+j*bn] = 0;
+            for (k = 0; k < bm; k++) {
+                c[i+j*bn] += a[i + k*bn] * b[k + j*bn];
+            }
+        }
+    }
 }
 
 float **read_matrix(char *fname, int *m, int *n) {
@@ -60,14 +135,11 @@ float **read_matrix(char *fname, int *m, int *n) {
             return NULL;
         }
 
-        char line[BUFFSIZE];
+        char line[CHARS_PER_FLOAT*(*n)];
         char *pch;
 
         int i, j;
-        float **A = malloc((*m)*sizeof(float*));
-        for (i = 0; i < *m; i++) {
-            A[i] = malloc((*n)*sizeof(float));
-        }
+        float **A = malloc_matrix(*m, *n);
 
         fgets(line, sizeof(line),fp); // Ignoring the first line, which was already read
         for (i = 0; i < *m && fgets(line, sizeof(line), fp) != NULL; i++) {
@@ -87,6 +159,15 @@ float **read_matrix(char *fname, int *m, int *n) {
     }
 }
 
+float **malloc_matrix(int rows, int cols) {
+    float **matrix = malloc(rows*sizeof(float*));
+    int i;
+    for (i = 0; i < rows; i++) {
+        matrix[i] = malloc(cols*sizeof(float));
+    }
+    return matrix;
+}
+
 void free_matrix(float **matrix, int m) {
     int i;
     for (i = 0; i < m; i++) {
@@ -103,5 +184,28 @@ void print_matrix(float **matrix, int m, int n) {
             printf("%f ", matrix[i][j]);
         }
         printf("\n");
+    }
+}
+
+void invert_row(float *buff, float **matrix, int m, int n) {
+    int i;
+    for (i = 0; i < m; i++) {
+        buff[i] = matrix[i][n];
+    }
+}
+
+void invert_matrix(float **buff, float **matrix, int m, int n) {
+    int i;
+    for (i = 0; i < n; i++) {
+        invert_row(buff[i], matrix, m, i);
+    }
+}
+
+void flatten_matrix(float *buff, float **matrix, int m, int n) {
+    int i, j;
+    float *ptr = buff;
+    for (i = 0; i < m; i++) {
+        memcpy(ptr, matrix[i], n*sizeof(float));
+        ptr += n;
     }
 }
