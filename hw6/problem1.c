@@ -60,11 +60,17 @@ void master(char* matrix_fname, char* vector_fname, char* out_fname) {
 
     free_matrix(inverted_matrix, m_cols);
 
-    float *result = malloc(m_cols*m_rows*sizeof(float));
+    float *result = malloc(m_rows*sizeof(float));
 
     if (m_rows == m_cols && v_rows == m_rows && v_cols == 1) {
         MPI_Bcast(&m_rows, 1, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_matrix_vector_multiply(flattened_matrix, inverted_vector, result, m_rows, 0, MPI_COMM_WORLD);
+
+        int i;
+        for (i = 0; i < m_rows; i++) {
+            printf("%f ", result[i]);
+        }
+        printf("\n");
     } else {
         printf("Invalid inputs. Matrix must be nxn (was %dx%d) and vector must"
                 " be nx1 (was %dx%d)",m_rows,m_cols,v_rows,v_cols);
@@ -83,7 +89,7 @@ void slave() {
     MPI_matrix_vector_multiply(NULL, NULL, NULL, n, 0, MPI_COMM_WORLD);
 }
 
-void MPI_matrix_vector_multiply(float *send_matrix, float *vector, float *recv_matrix, int n, int root,  MPI_Comm comm) {
+void MPI_matrix_vector_multiply(float *send_matrix, float *vector, float *result, int n, int root,  MPI_Comm comm) {
     int rank, total_procs;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &total_procs);
@@ -100,16 +106,19 @@ void MPI_matrix_vector_multiply(float *send_matrix, float *vector, float *recv_m
     float A[num_vals*n];
     MPI_Scatter(send_matrix, num_vals*n, MPI_FLOAT, A, num_vals*n, MPI_FLOAT, root, comm);
 
-    float temp[num_vals];
+    float temp[n];
     int i, j;
-    for (i = 0; i < num_vals; i++) {
+    for (i = 0; i < n; i++) {
         temp[i] = 0;
-        for (j = 0; j < n; j++) {
-            temp[i] += x[i] * A[i*n + j];
+        for (j = 0; j < num_vals; j++) {
+            temp[i] += x[j] * A[j*n+i];
         }
     }
 
+    MPI_Reduce(temp, result, n, MPI_FLOAT, MPI_SUM, root, comm);
 }
+
+
 
 void flat_matrix_multiply(float* a, int am, int an, float *b, int bm, int bn, float *c) {
     int i, j, k;
