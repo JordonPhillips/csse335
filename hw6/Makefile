@@ -15,4 +15,5 @@ vector:
 clean:
 	rm p1 A.txt x.txt
 
-ctest: all clean
+problem1: p1 matrix vector
+	./p1 A.txt x.txt b.txt

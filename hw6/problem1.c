@@ -64,7 +64,11 @@ void master(char* matrix_fname, char* vector_fname, char* out_fname) {
 
     if (m_rows == m_cols && v_rows == m_rows && v_cols == 1) {
         MPI_Bcast(&m_rows, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+        double start = MPI_Wtime();
         MPI_matrix_vector_multiply(flattened_matrix, inverted_vector, result, m_rows, 0, MPI_COMM_WORLD);
+        printf("Multiplication took %f seconds.\n", MPI_Wtime()-start);
+
         write_matrix(out_fname, result, m_rows, v_cols);
     } else {
         printf("Invalid inputs. Matrix must be nxn (was %dx%d) and vector must"
@@ -94,13 +98,13 @@ void MPI_matrix_vector_multiply(float *send_matrix, float *vector, float *result
         return;
     }
 
-    float x[num_vals];
+    float *x = (float*)malloc(num_vals*sizeof(float));
     MPI_Scatter(vector, num_vals, MPI_FLOAT, x, num_vals, MPI_FLOAT, root, comm);
 
-    float A[num_vals*n];
+    float *A = (float*)malloc(num_vals*n*sizeof(float));
     MPI_Scatter(send_matrix, num_vals*n, MPI_FLOAT, A, num_vals*n, MPI_FLOAT, root, comm);
 
-    float temp[n];
+    float *temp = (float*)malloc(n*sizeof(float));
     int i, j;
     for (i = 0; i < n; i++) {
         temp[i] = 0;
@@ -110,6 +114,10 @@ void MPI_matrix_vector_multiply(float *send_matrix, float *vector, float *result
     }
 
     MPI_Reduce(temp, result, n, MPI_FLOAT, MPI_SUM, root, comm);
+
+    free(x);
+    free(A);
+    free(temp);
 }
 
 float **read_matrix(char *fname, int *m, int *n) {
