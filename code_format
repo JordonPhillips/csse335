@@ -1,0 +1,12 @@
+# Code formatting options for astyle
+style=attach
+break-blocks
+pad-oper
+pad-header
+unpad-paren
+align-pointer=name
+align-reference=name
+remove-brackets
+convert-tabs
+max-code-length=80
+
