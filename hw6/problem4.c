@@ -5,35 +5,41 @@
 #include <string.h>
 
 #define CHARS_PER_FLOAT 16
+#define UP    0
+#define DOWN  1
+#define LEFT  2
+#define RIGHT 3
 
 typedef struct {
     int height;
     int width;
     float *data;
+    int is_inverted;
 } Matrix;
 
-void  master(char *a_fname, char *b_fname, char *out_fname);
-void  slave();
+void   master(char *a_fname, char *b_fname, char *out_fname);
+void   slave();
 
 Matrix matrix_read(char *fname);
 Matrix matrix_malloc(int height, int width);
-void  matrix_print(Matrix matrix);
-void  matrix_write(char *fname, Matrix matrix);
+void   matrix_print(Matrix matrix);
+void   matrix_write(char *fname, Matrix matrix);
 
-float matrix_get(Matrix matrix, int row, int col);
-void  matrix_get_submatrix(Matrix *submatrix, Matrix matrix, int start_row,
-                           int start_col);
+float  matrix_get(Matrix matrix, int row, int col);
+int    matrix_get_index(Matrix matrix, int row, int col);
+void   matrix_get_submatrix(Matrix *submatrix, Matrix matrix, int start_row,
+                            int start_col);
 
-void matrix_set(Matrix *matrix, int row, int col, float val);
-void matrix_invert(Matrix *matrix);
-void matrix_chunk(Matrix *matrix, int sqrt_total_procs);
+void   matrix_set(Matrix *matrix, int row, int col, float val);
+void   matrix_invert(Matrix *matrix);
+void   matrix_chunk(Matrix *matrix, int sqrt_total_procs);
 
-void  matrix_multiply(Matrix *result, Matrix a, Matrix b);
-void  MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int root,
-                          MPI_Comm comm);
-
-int   cart_rank_to_rank(int x, int y, int sqrt_total_procs);
-void  cart_rank(int rank, int sqrt_total_procs, int *i, int *j);
+void   matrix_multiply(Matrix *result, Matrix a, Matrix b);
+void   MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int root,
+                           int n, MPI_Comm comm);
+void   shift_data(int dir, int *cart_coords, int *neighbors, Matrix *send,
+                  Matrix *recv, int steps, MPI_Comm comm);
+int    get_opposite_direction(int dir);
 
 int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
@@ -64,119 +70,196 @@ void master(char *a_fname, char *b_fname, char *out_fname) {
         MPI_Abort(MPI_COMM_WORLD, -1);
     }
 
-    int total_procs;
-    MPI_Comm_size(MPI_COMM_WORLD, &total_procs);
-    int sqrt_total_procs = sqrt(total_procs);
-
-    if (total_procs != sqrt_total_procs * sqrt_total_procs) {
-        printf("Number of processes (%d) is not a perfect square.\n", total_procs);
-        MPI_Abort(MPI_COMM_WORLD, -1);
-    }
+    MPI_Bcast(&(a.width), 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     Matrix result = matrix_malloc(a.width, b.width);
-    double start = MPI_Wtime();
-    MPI_matrix_multiply(&result, &a, &b, 0, MPI_COMM_WORLD);
-    printf("Multiplication took %f seconds.\n", MPI_Wtime() - start);
-    //matrix_write(out_fname, result);
+    MPI_matrix_multiply(&result, &a, &b, a.width, 0, MPI_COMM_WORLD);
+    // matrix_write(out_fname, result);
 
-    if (result.width <= 20)
-        matrix_print(result);
+    // if (result.width <= 20)
+    //     matrix_print(result);
 
+    free(result.data);
     free(a.data);
     free(b.data);
-    free(result.data);
 }
 
 void slave() {
-    MPI_matrix_multiply(NULL, NULL, NULL, 0, MPI_COMM_WORLD);
+    int n;
+    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_matrix_multiply(NULL, NULL, NULL, n, 0, MPI_COMM_WORLD);
 }
 
-void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int root,
+void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root,
                          MPI_Comm comm) {
-    /*int rank, total_procs;
+    int rank, total_procs;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &total_procs);
 
+    if (n % total_procs != 0) {
+        if (rank == root)
+            printf("Matricies are not evenly divisible by number of processes.\n");
+
+        return;
+    }
+
     int sqrt_total_procs = sqrt(total_procs);
-    int v_size           = n / sqrt_total_procs;
-    int a_size           = v_size * v_size;
+
+    if (pow(sqrt_total_procs, 2) != total_procs) {
+        if (rank == root)
+            printf("Number of processes must be a perfect square.\n");
+
+        return;
+    }
+
+    int width = n / sqrt_total_procs;
+    int size = pow(width, 2);
 
     // ##################################################
-    // Step 0: Distribute A
+    // Step 0: Chunk and Distribute A and B
     // ##################################################
 
-    float *A = (float *)malloc(a_size * sizeof(float));
-    MPI_Scatter(send_matrix, a_size, MPI_FLOAT, A, a_size, MPI_FLOAT, root, comm);
+    if (rank == root) {
+        matrix_chunk(a, sqrt_total_procs);
+        matrix_chunk(b, sqrt_total_procs);
+    }
 
-    int rank_i, rank_j;
-    cart_rank(rank, sqrt_total_procs, &rank_i, &rank_j);
+    Matrix A = matrix_malloc(width, width);
+    MPI_Scatter(rank == root ? a->data : NULL, size, MPI_FLOAT, A.data, size,
+                MPI_FLOAT, root, comm);
+
+    Matrix B = matrix_malloc(width, width);
+    MPI_Scatter(rank == root ? b->data : NULL, size, MPI_FLOAT, B.data, size,
+                MPI_FLOAT, root, comm);
+
+    Matrix shift_buff = matrix_malloc(width, width);
+
+    Matrix C = {
+        width,
+        width,
+        rank == root ? result->data : (float *)malloc(pow(n, 2)*sizeof(float)),
+        0
+    };
 
     // ##################################################
-    // Step 1: Distribuite x
-    // This is done in 'waves'. First root
-    // scatters it to its row, then each process
-    // in that row sends it to the process 'below'
-    // itself.
+    // Step 0.5: Set up Caretesian communicator
     // ##################################################
+    int dim_sizes[2] = {sqrt_total_procs, sqrt_total_procs};
+    int wrap_around[2] = {1, 1};
+    int neighbors[4];
 
-    MPI_Comm row_comm;
-    MPI_Comm_split(comm, rank_i, rank_j, &row_comm);
-    float *x = (float *)malloc(v_size * sizeof(float));
+    MPI_Comm cart_comm;
+    MPI_Cart_create(comm, 2, dim_sizes, wrap_around, 0, &cart_comm);
 
-    int root_row = root / sqrt_total_procs;
+    int cart_rank;
+    int cart_coords[2];
+
+    MPI_Comm_rank(cart_comm, &cart_rank);
+    MPI_Cart_coords(cart_comm, cart_rank, 2, cart_coords);
+
+    int dummy;
+    MPI_Cart_shift(cart_comm, 0, 1, &dummy, &neighbors[UP]);
+    MPI_Cart_shift(cart_comm, 0, -1, &dummy, &neighbors[DOWN]);
+    MPI_Cart_shift(cart_comm, 1, 1, &dummy, &neighbors[LEFT]);
+    MPI_Cart_shift(cart_comm, 1, -1, &dummy, &neighbors[RIGHT]);
+
+    // ##################################################
+    // Step 1: Skew A
+    // ##################################################
+    int i, j, k;
+
+    for (i = 1; i < sqrt_total_procs; i++)
+        if (cart_coords[0] == i)
+            shift_data(LEFT, cart_coords, neighbors, &A, &shift_buff, i, cart_comm);
+
+    // ##################################################
+    // Step 2: Skew B
+    // ##################################################
+    for (i = 1; i < sqrt_total_procs; i++)
+        if (cart_coords[1] == i)
+            shift_data(UP, cart_coords, neighbors, &B, &shift_buff, i, cart_comm);
+
+    // ##################################################
+    // Step 3: Profit
+    // ##################################################
+    for (k = 0; k < sqrt_total_procs; k++) {
+        for (i = 0; i < sqrt_total_procs; i++) {
+            for (j = 0; j < sqrt_total_procs; j++) {
+                
+            }
+        }
+    }
+
+    if (rank != root)
+        free(C.data);
+
+    free(shift_buff.data);
+    free(B.data);
+    free(A.data);
+}
+
+void shift_data(int dir, int *cart_coords, int *neighbors, Matrix *send,
+                Matrix *recv, int steps, MPI_Comm comm) {
+    if (steps < 1) return;
+
+    int i;
+    int send_count = send->width * send->height;
+    int recv_count = recv->width * recv->height;
     MPI_Status status;
 
-    if (rank_i == root_row)
-        MPI_Scatter(vector, v_size, MPI_FLOAT, x, v_size, MPI_FLOAT, root, row_comm);
-    else {
-        int sender = cart_rank_to_rank(rank_i - 1, rank_j, sqrt_total_procs);
-        MPI_Recv(x, v_size, MPI_FLOAT, sender, MPI_ANY_TAG, comm, &status);
+    int send_first;
+
+    if (dir == UP || dir == DOWN)
+        send_first = cart_coords[0] % 2;
+    else
+        send_first = cart_coords[1] % 2;
+
+    int recv_dir = get_opposite_direction(dir);
+
+    if (send_first == 0)
+        MPI_Recv(recv->data, recv_count, MPI_FLOAT, neighbors[recv_dir], 0, comm,
+                 &status);
+
+    MPI_Send(send->data, send_count, MPI_FLOAT, neighbors[dir], 0, comm);
+
+    for (i = 1; i < steps; i++) {
+        MPI_Recv(recv->data, recv_count, MPI_FLOAT, neighbors[recv_dir], 0, comm,
+                 &status);
+        MPI_Send(recv->data, send_count, MPI_FLOAT, neighbors[dir], 0, comm);
     }
 
-    int final_row = (root_row - 1) % sqrt_total_procs;
+    if (send_first == 1)
+        MPI_Recv(recv->data, recv_count, MPI_FLOAT, neighbors[recv_dir], 0, comm,
+                 &status);
 
-    if (final_row < 0) final_row += sqrt_total_procs;
+    float *temp = recv->data;
+    recv->data = send->data;
+    send->data = temp;
+}
 
-    if (rank_i != final_row) {
-        int reciever = cart_rank_to_rank(rank_i + 1, rank_j, sqrt_total_procs);
-        MPI_Send(x, v_size, MPI_FLOAT, reciever, 0, comm);
+int get_opposite_direction(int dir) {
+    switch (dir) {
+    case UP:
+        return DOWN;
+
+    case DOWN:
+        return UP;
+
+    case LEFT:
+        return RIGHT;
+
+    case RIGHT:
+        return LEFT;
     }
 
-    // ##################################################
-    // Step 2: Aij * xi
-    // ##################################################
-
-    float *b = (float *)malloc(v_size * sizeof(float));
-    matrix_vector_multiply(b, A, x, v_size);
-    free(A);
-
-    // ##################################################
-    // Step 3: Reduce
-    // ##################################################
-
-    // Re-using x as a temporary variable since I don't need the info anymore
-    MPI_Reduce(b, x, v_size, MPI_FLOAT, MPI_SUM, 0, row_comm);
-
-    // ##################################################
-    // Step 4: Gather to root
-    // ##################################################
-
-    MPI_Comm column_comm;
-    MPI_Comm_split(comm, rank_j, rank_i, &column_comm);
-
-    if (rank_j == 0)
-        MPI_Gather(x, v_size, MPI_FLOAT, result, v_size, MPI_FLOAT, 0, column_comm);
-
-    free(x);
-    free(b);
-    */
+    return -1;
 }
 
 void matrix_multiply(Matrix *result, Matrix a, Matrix b) {
     int i, j, k, temp;
 
     for (i = 0; i < a.height; i++) {
-        for (j = 0; j < b.height; j++) {
+        for (j = 0; j < b.width; j++) {
             temp = 0;
 
             for (k = 0; k < a.width; k++)
@@ -191,7 +274,8 @@ Matrix matrix_malloc(int height, int width) {
     return (Matrix) {
         height,
         width,
-        (float *)malloc(width * height * sizeof(float))
+        (float *)malloc(width * height * sizeof(float)),
+        0
     };
 }
 
@@ -201,7 +285,7 @@ Matrix matrix_read(char *fname) {
     if (fp == NULL) {
         perror(fname);
         return (Matrix) {
-            0, 0, NULL
+            0, 0, NULL, 0
         };
     }
 
@@ -209,16 +293,16 @@ Matrix matrix_read(char *fname) {
     fscanf(fp, "%d %d", &height, &width);
 
     if (width < 1 || height < 1) {
-        printf("Invalid array size: %d x %d", height, width);
+        printf("Invalid array size: %d x %d\n", height, width);
         return (Matrix) {
-            0, 0, NULL
+            0, 0, NULL, 0
         };
     }
 
     char *pch;
     int i, j;
     int line_size = CHARS_PER_FLOAT * width * sizeof(float);
-    char *line = (char *)malloc(line_size);
+    char *line    = (char *)malloc(line_size);
     Matrix result = matrix_malloc(width, height);
 
     // Ignoring the first line, which was already read
@@ -229,7 +313,7 @@ Matrix matrix_read(char *fname) {
 
         for (j = 0; j < width && pch != NULL; j++) {
             matrix_set(&result, i, j, atof(pch));
-            pch     = strtok(NULL, " ");
+            pch = strtok(NULL, " ");
         }
     }
 
@@ -275,56 +359,62 @@ void matrix_invert(Matrix *matrix) {
             matrix_set(&result, j, i, matrix_get(*matrix, i, j));
 
     free(matrix->data);
+    result.is_inverted = matrix->is_inverted == 1 ? 0 : 1;
+    *matrix = result;
 }
 
-void matrix_chunk(Matrix *matrix, int sqrt_total_procs) {
+void matrix_chunk(Matrix *matrix, int num_chunks) {
     int i, j;
-    int size   = matrix->width / sqrt_total_procs;
-    Matrix submatrix = {size, size, matrix->data};
+    int size         = matrix->width / num_chunks;
+    float *data      = (float *)malloc(matrix->height * matrix->width * sizeof(
+                                           float));
+    Matrix submatrix = {size, size, data, 0};
 
-    for (i = 0; i < sqrt_total_procs; i++) {
-        for (j = 0; j < sqrt_total_procs; j++) {
-            matrix_get_submatrix(&submatrix, *matrix, i, j);
+    for (i = 0; i < num_chunks; i++) {
+        for (j = 0; j < num_chunks; j++) {
+            matrix_get_submatrix(&submatrix, *matrix, i * num_chunks, j * num_chunks);
             submatrix.data += size * size;
         }
     }
+
+    free(matrix->data);
+    matrix->data = data;
 }
 
 void matrix_get_submatrix(Matrix *submatrix, Matrix matrix, int start_row,
                           int start_col) {
-    int i, j;
+    int row, col;
+    int cell;
 
-    for (i = 0; i < submatrix->height; i++)
-        for (j = 0; j < submatrix->width; j++)
-            matrix_set(submatrix, i, j, matrix_get(matrix, i + start_row, j + start_col));
+    for (row = 0; row < submatrix->height; row++)
+        for (col = 0; col < submatrix->width; col++)
+            matrix_set(submatrix, row, col, matrix_get(matrix, row + start_row,
+                       col + start_col));
 }
 
 float matrix_get(Matrix matrix, int row, int col) {
     if (matrix.width < col || matrix.height < row) {
-        printf("Matrix out of bounds: getting [%d][%d] from %dx%d", row, col,
+        printf("Matrix out of bounds: getting [%d][%d] from %dx%d\n", row, col,
                matrix.height, matrix.width);
         return -1;
     }
 
-    return matrix.data[row * matrix.width + col];
+    return matrix.data[matrix_get_index(matrix, row, col)];
+}
+
+int matrix_get_index(Matrix matrix, int row, int col) {
+    if (matrix.is_inverted == 1)
+        return col * matrix.height + row;
+
+    return row * matrix.width + col;
 }
 
 void matrix_set(Matrix *matrix, int row, int col, float val) {
     if (matrix->width < col || matrix->height < row) {
-        printf("Matrix out of bounds: getting [%d][%d] from %dx%d", row, col,
+        printf("Matrix out of bounds: setting [%d][%d] from %dx%d\n", row, col,
                matrix->height, matrix->width);
         return;
     }
 
-    matrix->data[row * matrix->width + col] = val;
+    matrix->data[matrix_get_index(*matrix, row, col)] = val;
 }
-
-int cart_rank_to_rank(int x, int y, int sqrt_total_procs) {
-    return x * sqrt_total_procs + y;
-}
-
-void cart_rank(int rank, int sqrt_total_procs, int *i, int *j) {
-    *i = rank / sqrt_total_procs;
-    *j = rank % sqrt_total_procs;
-}
-
