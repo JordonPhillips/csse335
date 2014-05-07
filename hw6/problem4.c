@@ -112,12 +112,8 @@ void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root,
 
     Matrix shift_buff = matrix_malloc(width, width);
 
-    Matrix C = {
-        width,
-        width,
-        rank == root ? result->data : (float *)malloc(pow(n, 2)*sizeof(float)),
-        0
-    };
+    Matrix C = matrix_malloc(width, width);
+    matrix_init(&C);
 
     // ##################################################
     // Step 0.5: Set up Caretesian communicator
@@ -158,24 +154,33 @@ void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root,
             shift_data(UP, cart_coords, neighbors, &B, &shift_buff, i, cart_comm);
 
     // ##################################################
-    // Step 3: Profit
+    // Step 3: Perform the multiplication
     // ##################################################
-    for (k = 0; k < sqrt_total_procs; k++) {
-        for (i = 0; i < sqrt_total_procs; i++) {
-            for (j = 0; j < sqrt_total_procs; j++) {
-                // cij += aij * bij
-                shift_data(LEFT, cart_coords, neighbors, &A, 1, cart_comm);
-                shift_data(UP, cart_coords, neighbors, &B, 1, cart_comm);
-            }
-        }
+    for (j = 0; j < sqrt_total_procs; j++) {
+        matrix_multiply(&shift_buff, A, B);
+        matrix_add(&C, shift_buff);
+        shift_data(LEFT, cart_coords, neighbors, &A, &shift_buff, 1, cart_comm);
+        shift_data(UP, cart_coords, neighbors, &B, &shift_buff, 1, cart_comm);
     }
 
-    if (rank != root)
-        free(C.data);
-
+    // ##################################################
+    // Step 4: Gather the results
+    // ##################################################
     free(shift_buff.data);
     free(B.data);
     free(A.data);
+
+    MPI_Gather(C.data, size, MPI_FLOAT,
+        rank == root ? result->data : NULL, size, MPI_FLOAT,
+        root, comm
+    );
+
+    free(C.data);
+
+    if (rank == root) {
+        matrix_chunk(result, sqrt_total_procs);
+        matrix_print(*result);
+    }
 }
 
 void shift_data(int dir, int *cart_coords, int *neighbors, Matrix *send,

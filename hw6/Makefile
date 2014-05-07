@@ -9,10 +9,10 @@ p1: problem1.c
 p2: problem2.c
 	$(CC) $(CFLAGS) problem2.c -o p2
 
-p3: problem3.c
+p3: problem3.c matrix.c
 	$(CC) $(CFLAGS) problem3.c -o p3
 
-p4: problem4.c
+p4: problem4.c matrix.c
 	$(CC) $(CFLAGS) problem4.c -o p4
 
 matrix:

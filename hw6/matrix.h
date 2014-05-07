@@ -19,7 +19,10 @@ void   matrix_get_submatrix(Matrix *submatrix, Matrix matrix, int start_row, int
 
 void   matrix_set(Matrix *matrix, int row, int col, float val);
 void   matrix_invert(Matrix *matrix);
-void   matrix_chunk(Matrix *matrix, int sqrt_total_procs);
+void   matrix_chunk(Matrix *matrix, int chunk_size);
+void   matrix_init(Matrix *matrix);
 
 void   matrix_multiply(Matrix *result, Matrix a, Matrix b);
-void   matrix_add(Matrix *d)
+void   matrix_add(Matrix *a, Matrix b);
+
+#define CHARS_PER_FLOAT 16
