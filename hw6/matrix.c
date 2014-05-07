@@ -4,17 +4,16 @@
 #include "matrix.h"
 
 void matrix_multiply(Matrix *result, Matrix a, Matrix b) {
-    int i, j, k, temp;
+    int   i, j, k;
+    float temp;
 
-    for (i = 0; i < a.height; i++)
-        for (j = 0; j < b.width; j++) {
-            temp = 0;
+    for (k = 0; k < a.width; k++)
+        for (i = 0; i < a.height; i++)
+            for (j = 0; j < b.width; j++) {
+                temp = matrix_get(*result, i, j) + matrix_get(a, i, k) * matrix_get(b, k, j);
+                matrix_set(result, i, j, temp);
+            }
 
-            for (k = 0; k < a.width; k++)
-                temp += matrix_get(a, i, k) * matrix_get(b, k, j);
-
-            matrix_set(result, i, j, temp);
-        }
 }
 
 void matrix_add(Matrix *a, Matrix b) {
@@ -34,12 +33,14 @@ void matrix_add(Matrix *a, Matrix b) {
 }
 
 Matrix matrix_malloc(int height, int width) {
-    return (Matrix) {
-               height,
-               width,
-               (float *)malloc( width * height * sizeof(float) ),
-               0
+    Matrix matrix = {
+        height,
+        width,
+        (float *)malloc(width * height * sizeof(float)),
+        0
     };
+    matrix_init(&matrix);
+    return matrix;
 }
 
 void matrix_free(Matrix matrix) {
@@ -52,7 +53,7 @@ Matrix matrix_read(char *fname) {
     if (fp == NULL) {
         perror(fname);
         return (Matrix) {
-                   0, 0, NULL, 0
+            0, 0, NULL, 0
         };
     }
 
@@ -62,7 +63,7 @@ Matrix matrix_read(char *fname) {
     if (width < 1 || height < 1) {
         printf("Invalid array size: %d x %d\n", height, width);
         return (Matrix) {
-                   0, 0, NULL, 0
+            0, 0, NULL, 0
         };
     }
 
@@ -70,7 +71,7 @@ Matrix matrix_read(char *fname) {
     int    i, j;
     int    line_size = CHARS_PER_FLOAT * width * sizeof(float);
     char   *line     = (char *)malloc(line_size);
-    Matrix result    = matrix_malloc(width, height);
+    Matrix result    = matrix_malloc(height, width);
 
     // Ignoring the first line, which was already read
     fgets(line, line_size, fp);
@@ -79,7 +80,7 @@ Matrix matrix_read(char *fname) {
         pch = strtok(line, " ");
 
         for (j = 0; j < width && pch != NULL; j++) {
-            matrix_set( &result, i, j, atof(pch) );
+            matrix_set(&result, i, j, atof(pch));
             pch = strtok(NULL, " ");
         }
     }
@@ -100,13 +101,13 @@ void matrix_init(Matrix *matrix) {
 void matrix_print(Matrix matrix) {
     int i, j;
 
-            printf("%d %d\n", matrix.height, matrix.width);
+    printf("%d %d\n", matrix.height, matrix.width);
 
     for (i = 0; i < matrix.height; i++) {
         for (j = 0; j < matrix.width; j++)
-            printf( "%f ", matrix_get(matrix, i, j) );
+            printf("%f ", matrix_get(matrix, i, j));
 
-            printf( "\n");
+        printf("\n");
     }
 }
 
@@ -114,13 +115,13 @@ void matrix_write(char *fname, Matrix matrix) {
     int  i, j;
     FILE *fp = fopen(fname, "w");
 
-            fprintf(fp, "%d %d\n", matrix.height, matrix.width);
+    fprintf(fp, "%d %d\n", matrix.height, matrix.width);
 
     for (i = 0; i < matrix.height; i++) {
         for (j = 0; j < matrix.width; j++)
-            fprintf( fp, "%f ", matrix_get(matrix, i, j) );
+            fprintf(fp, "%f ", matrix_get(matrix, i, j));
 
-            fprintf( fp, "\n");
+        fprintf(fp, "\n");
     }
 
     fclose(fp);
@@ -132,7 +133,7 @@ void matrix_invert(Matrix *matrix) {
 
     for (i = 0; i < matrix->height; i++)
         for (j = 0; j < matrix->width; j++)
-            matrix_set( &result, j, i, matrix_get(*matrix, i, j) );
+            matrix_set(&result, j, i, matrix_get(*matrix, i, j));
 
     free(matrix->data);
     result.is_inverted = matrix->is_inverted == 1 ? 0 : 1;
@@ -142,8 +143,7 @@ void matrix_invert(Matrix *matrix) {
 void matrix_chunk(Matrix *matrix, int num_chunks) {
     int   i, j;
     int   size  = matrix->width / num_chunks;
-    float *data = (float *)malloc( matrix->height * matrix->width * sizeof(
-                                       float) );
+    float *data = (float *)malloc(matrix->height * matrix->width * sizeof(float));
     Matrix submatrix = {size, size, data, 0};
 
     for (i = 0; i < num_chunks; i++)
@@ -156,14 +156,15 @@ void matrix_chunk(Matrix *matrix, int num_chunks) {
     matrix->data = data;
 }
 
-void matrix_get_submatrix(Matrix *submatrix, Matrix matrix, int start_row, int start_col) {
+void matrix_get_submatrix(Matrix *submatrix, Matrix matrix, int start_row,
+                          int start_col) {
     int row, col;
     int cell;
 
     for (row = 0; row < submatrix->height; row++)
         for (col = 0; col < submatrix->width; col++)
-            matrix_set( submatrix, row, col, matrix_get(matrix, row + start_row,
-                                                        col + start_col) );
+            matrix_set(submatrix, row, col, matrix_get(matrix, row + start_row,
+                       col + start_col));
 }
 
 float matrix_get(Matrix matrix, int row, int col) {

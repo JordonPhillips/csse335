@@ -13,9 +13,10 @@
 
 void master(char *a_fname, char *b_fname, char *out_fname);
 void slave();
-void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int root, int n, MPI_Comm comm);
-void shift_data(int dir, int *cart_coords, int *neighbors, Matrix *send, Matrix *recv, int steps,
-                MPI_Comm comm);
+void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int root, int n,
+                         MPI_Comm comm);
+void shift_data(int dir, int *cart_coords, int *neighbors, Matrix *send,
+                Matrix *recv, int steps, MPI_Comm comm);
 int get_opposite_direction(int dir);
 
 int main(int argc, char **argv) {
@@ -28,9 +29,8 @@ int main(int argc, char **argv) {
             master(argv[1], argv[2], argv[3]);
         else
             printf("Incorrect argument count. Expected 3, recieved %d\n", argc - 1);
-    } else if (argc == 4) {
+    } else if (argc == 4)
         slave();
-    }
 
     MPI_Finalize();
     return 0;
@@ -39,7 +39,6 @@ int main(int argc, char **argv) {
 void master(char *a_fname, char *b_fname, char *out_fname) {
     Matrix a = matrix_read(a_fname);
     Matrix b = matrix_read(b_fname);
-
 
     if (a.width != a.height || b.width != b.height || a.width != b.width) {
         printf("Invalid inputs. Both matricies must be nxn. A was %dx%d. B was"
@@ -64,14 +63,13 @@ void master(char *a_fname, char *b_fname, char *out_fname) {
 void slave() {
     int n;
 
-
     MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_matrix_multiply(NULL, NULL, NULL, n, 0, MPI_COMM_WORLD);
 }
 
-void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root, MPI_Comm comm) {
+void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root,
+                         MPI_Comm comm) {
     int rank, total_procs;
-
 
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &total_procs);
@@ -178,38 +176,37 @@ void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root, 
     free(B.data);
     free(A.data);
 
-    if (rank == root) {
-        end_times = (double*)malloc(total_procs*sizeof(double));
-    }
+    if (rank == root)
+        end_times = (double *)malloc(total_procs * sizeof(double));
 
     MPI_Gather(&end_time, 1, MPI_DOUBLE, end_times, 1, MPI_DOUBLE, root, comm);
 
     if (rank == root) {
-        for (i = 1; i < total_procs; i++) {
+        for (i = 1; i < total_procs; i++)
             if (end_time < end_times[i])
                 end_time = end_times[i];
-        }
-        printf("Multiplication took %f seconds.\n", end_time-start_time);
+
+        printf("Multiplication took %f seconds.\n", end_time - start_time);
         free(end_times);
     }
 
-    MPI_Gather(C.data, size, MPI_FLOAT, rank == root ? result->data : NULL, size, MPI_FLOAT,root, comm);
+    MPI_Gather(C.data, size, MPI_FLOAT, rank == root ? result->data : NULL, size,
+               MPI_FLOAT, root, comm);
 
     free(C.data);
 
-    if (rank == root) {
+    if (rank == root)
         matrix_chunk(result, sqrt_total_procs);
-        
-    }
 }
 
-void shift_data(int dir, int *cart_coords, int *neighbors, Matrix *send, Matrix *recv, int steps,
+void shift_data(int dir, int *cart_coords, int *neighbors, Matrix *send,
+                Matrix *recv, int steps,
                 MPI_Comm comm) {
     if (steps < 1) return;
 
-    int        i;
-    int        send_count = send->width * send->height;
-    int        recv_count = recv->width * recv->height;
+    int i;
+    int send_count = send->width * send->height;
+    int recv_count = recv->width * recv->height;
     MPI_Status status;
 
     int send_first;
