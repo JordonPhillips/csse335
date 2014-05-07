@@ -11,13 +11,12 @@
 #define LEFT  2
 #define RIGHT 3
 
-void   master(char *a_fname, char *b_fname, char *out_fname);
-void   slave();
-void   MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int root,
-                           int n, MPI_Comm comm);
-void   shift_data(int dir, int *cart_coords, int *neighbors, Matrix *send,
-                  Matrix *recv, int steps, MPI_Comm comm);
-int    get_opposite_direction(int dir);
+void master(char *a_fname, char *b_fname, char *out_fname);
+void slave();
+void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int root, int n, MPI_Comm comm);
+void shift_data(int dir, int *cart_coords, int *neighbors, Matrix *send, Matrix *recv, int steps,
+                MPI_Comm comm);
+int get_opposite_direction(int dir);
 
 int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
@@ -29,9 +28,8 @@ int main(int argc, char **argv) {
             master(argv[1], argv[2], argv[3]);
         else
             printf("Incorrect argument count. Expected 3, recieved %d\n", argc - 1);
-    } else {
-        if (argc == 4)
-            slave();
+    } else if (argc == 4) {
+        slave();
     }
 
     MPI_Finalize();
@@ -41,6 +39,7 @@ int main(int argc, char **argv) {
 void master(char *a_fname, char *b_fname, char *out_fname) {
     Matrix a = matrix_read(a_fname);
     Matrix b = matrix_read(b_fname);
+
 
     if (a.width != a.height || b.width != b.height || a.width != b.width) {
         printf("Invalid inputs. Both matricies must be nxn. A was %dx%d. B was"
@@ -64,13 +63,16 @@ void master(char *a_fname, char *b_fname, char *out_fname) {
 
 void slave() {
     int n;
+
+
     MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_matrix_multiply(NULL, NULL, NULL, n, 0, MPI_COMM_WORLD);
 }
 
-void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root,
-                         MPI_Comm comm) {
+void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root, MPI_Comm comm) {
     int rank, total_procs;
+
+
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &total_procs);
 
@@ -91,7 +93,7 @@ void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root,
     }
 
     int width = n / sqrt_total_procs;
-    int size = pow(width, 2);
+    int size  = pow(width, 2);
 
     // ##################################################
     // Step 0: Chunk and Distribute A and B
@@ -118,7 +120,7 @@ void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root,
     // ##################################################
     // Step 0.5: Set up Caretesian communicator
     // ##################################################
-    int dim_sizes[2] = {sqrt_total_procs, sqrt_total_procs};
+    int dim_sizes[2]   = {sqrt_total_procs, sqrt_total_procs};
     int wrap_around[2] = {1, 1};
     int neighbors[4];
 
@@ -132,9 +134,9 @@ void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root,
     MPI_Cart_coords(cart_comm, cart_rank, 2, cart_coords);
 
     int dummy;
-    MPI_Cart_shift(cart_comm, 0, 1, &dummy, &neighbors[UP]);
+    MPI_Cart_shift(cart_comm, 0, 1,  &dummy, &neighbors[UP]);
     MPI_Cart_shift(cart_comm, 0, -1, &dummy, &neighbors[DOWN]);
-    MPI_Cart_shift(cart_comm, 1, 1, &dummy, &neighbors[LEFT]);
+    MPI_Cart_shift(cart_comm, 1, 1,  &dummy, &neighbors[LEFT]);
     MPI_Cart_shift(cart_comm, 1, -1, &dummy, &neighbors[RIGHT]);
 
     // ##################################################
@@ -160,7 +162,7 @@ void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root,
         matrix_multiply(&shift_buff, A, B);
         matrix_add(&C, shift_buff);
         shift_data(LEFT, cart_coords, neighbors, &A, &shift_buff, 1, cart_comm);
-        shift_data(UP, cart_coords, neighbors, &B, &shift_buff, 1, cart_comm);
+        shift_data(UP,   cart_coords, neighbors, &B, &shift_buff, 1, cart_comm);
     }
 
     // ##################################################
@@ -171,9 +173,9 @@ void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root,
     free(A.data);
 
     MPI_Gather(C.data, size, MPI_FLOAT,
-        rank == root ? result->data : NULL, size, MPI_FLOAT,
-        root, comm
-    );
+               rank == root ? result->data : NULL, size, MPI_FLOAT,
+               root, comm
+               );
 
     free(C.data);
 
@@ -183,13 +185,13 @@ void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root,
     }
 }
 
-void shift_data(int dir, int *cart_coords, int *neighbors, Matrix *send,
-                Matrix *recv, int steps, MPI_Comm comm) {
+void shift_data(int dir, int *cart_coords, int *neighbors, Matrix *send, Matrix *recv, int steps,
+                MPI_Comm comm) {
     if (steps < 1) return;
 
-    int i;
-    int send_count = send->width * send->height;
-    int recv_count = recv->width * recv->height;
+    int        i;
+    int        send_count = send->width * send->height;
+    int        recv_count = recv->width * recv->height;
     MPI_Status status;
 
     int send_first;

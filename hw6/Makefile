@@ -27,6 +27,9 @@ clean:
 format:
 	astyle --options=../code_format *.c
 
+uncrustify:
+	uncrustify -c ../uncrustify.cfg --no-backup *.c *.h
+
 problem1: p1 matrix vector
 	mpirun p1 A.txt x.txt b.txt
 

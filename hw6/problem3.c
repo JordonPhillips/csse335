@@ -5,14 +5,13 @@
 #include <string.h>
 #include "matrix.c"
 
-void   master(char *a_fname, char *b_fname, char *out_fname);
-void   slave();
+void master(char *a_fname, char *b_fname, char *out_fname);
+void slave();
 
-void   MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int root,
-                           int n, MPI_Comm comm);
+void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int root, int n, MPI_Comm comm);
 
-int    cart_rank_to_rank(int x, int y, int sqrt_total_procs);
-void   cart_rank(int rank, int sqrt_total_procs, int *i, int *j);
+int  cart_rank_to_rank(int x, int y, int sqrt_total_procs);
+void cart_rank(int rank, int sqrt_total_procs, int *i, int *j);
 
 int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
@@ -24,9 +23,8 @@ int main(int argc, char **argv) {
             master(argv[1], argv[2], argv[3]);
         else
             printf("Incorrect argument count. Expected 3, recieved %d\n", argc - 1);
-    } else {
-        if (argc == 4)
-            slave();
+    } else if (argc == 4) {
+        slave();
     }
 
     MPI_Finalize();
@@ -59,21 +57,22 @@ void master(char *a_fname, char *b_fname, char *out_fname) {
 
 void slave() {
     int n;
+
     MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_matrix_multiply(NULL, NULL, NULL, n, 0, MPI_COMM_WORLD);
 }
 
-void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root,
-                         MPI_Comm comm) {
+void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root, MPI_Comm comm) {
     int rank, total_procs;
+
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &total_procs);
 
-    int rows_per_proc = n / total_procs;
+    int rows_per_proc    = n / total_procs;
     int total_procs_used = total_procs;
 
     MPI_Comm gather_comm = comm;
-    int gather_root = root;
+    int      gather_root = root;
 
     if (rows_per_proc == 0) {
         if (rank == root)
@@ -81,7 +80,7 @@ void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root,
                    " processes. %d were given.\n", n, n, n, total_procs);
 
         int color = rank + root - 1;
-        int key = color % total_procs + 1;
+        int key   = color % total_procs + 1;
         color /= total_procs;
         MPI_Comm_split(comm, color, key, &gather_comm);
 
@@ -92,7 +91,7 @@ void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root,
 
         if (color > 0) return;
 
-        rows_per_proc = 1;
+        rows_per_proc    = 1;
         total_procs_used = n;
     }
 
@@ -120,7 +119,7 @@ void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root,
 
     if (sender < 0) sender += total_procs;
 
-    int reciever = (rank + 1) % total_procs;
+    int reciever       = (rank + 1) % total_procs;
     int last_proc_rank = (root + total_procs_used - 1) % total_procs;
 
     Matrix B = matrix_malloc(n, rows_per_proc);
@@ -166,13 +165,12 @@ void MPI_matrix_multiply(Matrix *result, Matrix *a, Matrix *b, int n, int root,
     double end_time = MPI_Wtime();
 
     if (rank == last_proc_rank)
-        MPI_Send(&end_time, 1, MPI_DOUBLE, 0, 0, comm);
+            MPI_Send(&end_time, 1, MPI_DOUBLE, 0, 0, comm);
 
     if (rank == root) {
         MPI_Recv(&end_time, 1, MPI_DOUBLE, last_proc_rank, MPI_ANY_TAG, comm, &status);
         printf("Multiplication took %f seconds.\n", end_time - start_time);
     }
-
 
     int send_count = C.width * C.height;
     MPI_Gather(C.data, send_count, MPI_FLOAT,
@@ -192,4 +190,3 @@ void cart_rank(int rank, int sqrt_total_procs, int *i, int *j) {
     *i = rank / sqrt_total_procs;
     *j = rank % sqrt_total_procs;
 }
-

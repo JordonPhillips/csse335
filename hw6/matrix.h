@@ -1,8 +1,8 @@
 typedef struct {
-    int height;
-    int width;
+    int   height;
+    int   width;
     float *data;
-    int is_inverted;
+    int   is_inverted;
 } Matrix;
 
 Matrix matrix_malloc(int height, int width);
@@ -13,16 +13,16 @@ void   matrix_print(Matrix matrix);
 void   matrix_fprint(FILE *stream, Matrix matrix);
 void   matrix_write(char *file_name, Matrix matrix);
 
-float  matrix_get(Matrix matrix, int row, int col);
-int    matrix_get_index(Matrix matrix, int row, int col);
-void   matrix_get_submatrix(Matrix *submatrix, Matrix matrix, int start_row, int start_col);
+float matrix_get(Matrix matrix, int row, int col);
+int   matrix_get_index(Matrix matrix, int row, int col);
+void  matrix_get_submatrix(Matrix *submatrix, Matrix matrix, int start_row, int start_col);
 
-void   matrix_set(Matrix *matrix, int row, int col, float val);
-void   matrix_invert(Matrix *matrix);
-void   matrix_chunk(Matrix *matrix, int chunk_size);
-void   matrix_init(Matrix *matrix);
+void matrix_set(Matrix *matrix, int row, int col, float val);
+void matrix_invert(Matrix *matrix);
+void matrix_chunk(Matrix *matrix, int chunk_size);
+void matrix_init(Matrix *matrix);
 
-void   matrix_multiply(Matrix *result, Matrix a, Matrix b);
-void   matrix_add(Matrix *a, Matrix b);
+void matrix_multiply(Matrix *result, Matrix a, Matrix b);
+void matrix_add(Matrix *a, Matrix b);
 
 #define CHARS_PER_FLOAT 16
