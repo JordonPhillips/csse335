@@ -3,7 +3,7 @@ CFLAGS=-lm
 
 all: p1 p2 p3 p4
 
-p1: problem1.c
+p1: problem1.c matrix.c
 	$(CC) $(CFLAGS) problem1.c -o p1
 
 p2: problem2.c matrix.c
