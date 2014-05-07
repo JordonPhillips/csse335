@@ -4,7 +4,7 @@
 #PBS -N phillijk-p4-25
 
 #Request some resources, for this we use 40 cores.
-#PBS -l nodes=13:ppn=2
+#PBS -lnodes=13:ppn=2
 
 #Limit the amount of time the job can run to 1 hour. 
 #Nice for stopping zombie processes and being a good person.
