@@ -5,15 +5,14 @@
 
 void matrix_multiply(Matrix *result, Matrix a, Matrix b) {
     int i, j, k, temp;
+    matrix_init(result);
 
-    for (i = 0; i < a.height; i++)
-        for (j = 0; j < b.width; j++) {
-            temp = 0;
-
-            for (k = 0; k < a.width; k++)
-                temp += matrix_get(a, i, k) * matrix_get(b, k, j);
-
-            matrix_set(result, i, j, temp);
+    for (k = 0; k < a.width; k++)
+        for (i = 0; i < a.height; i++) {
+            for (j = 0; j < b.width; j++) {
+                temp = matrix_get(*result, i, j) + matrix_get(a, i, k) * matrix_get(b, k, j);
+                matrix_set(result, i, j, temp);
+            }
         }
 }
 
