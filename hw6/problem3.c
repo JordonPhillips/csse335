@@ -44,6 +44,7 @@ void master(char *a_fname, char *b_fname, char *out_fname) {
     MPI_Bcast(&(a.width), 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     Matrix result = matrix_malloc(a.width, b.width);
+    matrix_init(&result);
     MPI_matrix_multiply(&result, &a, &b, a.width, 0, MPI_COMM_WORLD);
     matrix_write(out_fname, result);
 

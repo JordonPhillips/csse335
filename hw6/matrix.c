@@ -7,8 +7,6 @@ void matrix_multiply(Matrix *result, Matrix a, Matrix b) {
     int   i, j, k;
     float temp;
 
-    matrix_init(result);
-
     for (k = 0; k < a.width; k++)
         for (i = 0; i < a.height; i++)
             for (j = 0; j < b.width; j++) {
@@ -35,12 +33,14 @@ void matrix_add(Matrix *a, Matrix b) {
 }
 
 Matrix matrix_malloc(int height, int width) {
-    return (Matrix) {
+    Matrix matrix = {
         height,
         width,
         (float *)malloc(width * height * sizeof(float)),
         0
     };
+    matrix_init(&matrix);
+    return matrix;
 }
 
 void matrix_free(Matrix matrix) {
