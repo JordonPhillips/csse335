@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "matrix.h"
 
 void matrix_multiply(Matrix *result, Matrix a, Matrix b) {
@@ -11,6 +14,22 @@ void matrix_multiply(Matrix *result, Matrix a, Matrix b) {
                 temp += matrix_get(a, i, k) * matrix_get(b, k, j);
 
             matrix_set(result, i, j, temp);
+        }
+    }
+}
+
+void matrix_add(Matrix *a, Matrix b) {
+    if (a->height != b.height || a->width != b.width) {
+        perror("Matricies are not the same dimensions.");
+        return;
+    }
+
+    int i, j;
+    float val;
+    for (i = 0; i < a->height; i++) {
+        for (j = 0; j < a->width; j++) {
+            val = matrix_get(*a, i, j) + matrix_get(b, i, j);
+            matrix_set(a, i, j, val);
         }
     }
 }
@@ -69,6 +88,13 @@ Matrix matrix_read(char *fname) {
     free(line);
     fclose(fp);
     return result;
+}
+
+void matrix_init(Matrix *matrix) {
+    int i, j;
+    for (i = 0; i < matrix->height; i++)
+        for (j = 0; j < matrix->width; j++)
+            matrix_set(matrix, i, j, 0);
 }
 
 void matrix_print(Matrix matrix) {
