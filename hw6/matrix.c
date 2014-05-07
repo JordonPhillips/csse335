@@ -70,7 +70,7 @@ Matrix matrix_read(char *fname) {
     int    i, j;
     int    line_size = CHARS_PER_FLOAT * width * sizeof(float);
     char   *line     = (char *)malloc(line_size);
-    Matrix result    = matrix_malloc(width, height);
+    Matrix result    = matrix_malloc(height, width);
 
     // Ignoring the first line, which was already read
     fgets(line, line_size, fp);

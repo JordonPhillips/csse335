@@ -63,8 +63,6 @@ void master(char *a_fname, char *b_fname, char *out_fname) {
 
 void slave() {
     int n;
-
-
     MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_matrix_multiply(NULL, NULL, NULL, n, 0, MPI_COMM_WORLD);
 }

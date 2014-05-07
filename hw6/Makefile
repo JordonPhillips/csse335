@@ -6,7 +6,7 @@ all: p1 p2 p3 p4
 p1: problem1.c
 	$(CC) $(CFLAGS) problem1.c -o p1
 
-p2: problem2.c
+p2: problem2.c matrix.c
 	$(CC) $(CFLAGS) problem2.c -o p2
 
 p3: problem3.c matrix.c
