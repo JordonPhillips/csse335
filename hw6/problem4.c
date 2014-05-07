@@ -51,7 +51,7 @@ void master(char *a_fname, char *b_fname, char *out_fname) {
 
     Matrix result = matrix_malloc(a.width, b.width);
     MPI_matrix_multiply(&result, &a, &b, a.width, 0, MPI_COMM_WORLD);
-    // matrix_write(out_fname, result);
+    matrix_write(out_fname, result);
 
     if (result.width <= 20)
         matrix_print(result);
