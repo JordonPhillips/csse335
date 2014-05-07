@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #Set the name of the job. It will default for you to something ugly.
-#PBS -N phillijk-p2-49
+#PBS -N phillijk-p4-49
 
 #Request some resources, for this we use 40 cores.
 #PBS -l nodes=25:ppn=2
@@ -19,5 +19,5 @@
 #PBS -M phillijk@rose-hulman.edu
 
 #Easiest to just give the full path to the executable you want run.
-mpirun -np 49 ${PBS_O_HOME}/mpi/hw6/p2 ${PBS_O_HOME}/mpi/hw6/A.txt ${PBS_O_HOME}/mpi/hw6/x.txt ${PBS_O_HOME}/mpi/hw6/c-2-49.txt
+mpirun -np 49 ${PBS_O_HOME}/mpi/hw6/p4 ${PBS_O_HOME}/mpi/hw6/A.txt ${PBS_O_HOME}/mpi/hw6/A.txt ${PBS_O_HOME}/mpi/hw6/C-4-49.txt
 
