@@ -18,8 +18,8 @@ void read_particles(char *filename, double ***particles, int *n) {
 	if (*n < 1)
 		perror("Too few particles specified.");
 
-	*particles = alloc_2d_double(n, doubles_per_particle);
-	double particle;
+	*particles = alloc_2d_double(*n, doubles_per_particle);
+	double *particle;
 
 	char *pch;
 	int i, j;
@@ -60,7 +60,8 @@ void write_particles(char *filename, double **particles, int n) {
 double **alloc_2d_double(int rows, int cols) {
     double *data = (double *)malloc(rows*cols*sizeof(double));
     double **array= (double **)malloc(rows*sizeof(double*));
-    for (int i=0; i<rows; i++)
+    int i;
+    for (i = 0; i < rows; i++)
         array[i] = &(data[cols*i]);
 
     return array;
