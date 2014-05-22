@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include <string.h>
 #include "nbody_utils.h"
 
@@ -17,8 +18,8 @@ void read_particles(char *filename, double ***particles, int *n) {
 	if (*n < 1)
 		perror("Too few particles specified.");
 
-	double *particle;
-	*particles = (double**)malloc(*n*sizeof(double*));
+	*particles = alloc_2d_double(n, doubles_per_particle);
+	double particle;
 
 	char *pch;
 	int i, j;
@@ -28,14 +29,12 @@ void read_particles(char *filename, double ***particles, int *n) {
 
 	for (i = 0; i < *n && fgets(line, line_size, fp) != NULL; i++) {
 		pch = strtok(line, ", ");
-		particle = (double*)malloc(doubles_per_particle*sizeof(double));
+		particle = (*particles)[i];
 
 		for (j = 0; j < doubles_per_particle && pch != NULL; j++) {
 			particle[j] = atof(pch);
 			pch = strtok(NULL, ", ");
 		}
-
-		(*particles)[i] = particle;
 	}
 
 	fclose(fp);
@@ -56,4 +55,18 @@ void write_particles(char *filename, double **particles, int n) {
 	}
 
 	fclose(fp);
+}
+
+double **alloc_2d_double(int rows, int cols) {
+    double *data = (double *)malloc(rows*cols*sizeof(double));
+    double **array= (double **)malloc(rows*sizeof(double*));
+    for (int i=0; i<rows; i++)
+        array[i] = &(data[cols*i]);
+
+    return array;
+}
+
+void free_2d_double(double **array) {
+	free(array[0]);
+	free(array);
 }

@@ -9,3 +9,6 @@
 
 void read_particles(char *filename, double ***particles, int *n);
 void write_particles(char *filename, double **particles, int n);
+
+double **alloc_2d_double(int rows, int cols);
+void free_2d_double(double **array);

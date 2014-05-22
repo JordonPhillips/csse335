@@ -11,15 +11,12 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	double **particles;
-	int n, i;
+	int n;
 	read_particles(argv[1], &particles, &n);
 	nbody_serial(&particles, n, (int)atof(argv[3]), (int)atof(argv[4]), G);
 	write_particles(argv[2], particles, n);
 
-	for (i = 0; i < n; i++) {
-		free(particles[i]);
-	}
-	free(particles);
+	free_2d_double(particles);
   return 0;
 }
 
