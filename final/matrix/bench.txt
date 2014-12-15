@@ -1,0 +1,139 @@
+###
+# Function benchmarks. The numbers after the dashes represent the
+# number of cores.
+# Ex:
+#     BenchmarkMultiplySerial100-8
+# Was performed using 8 cores.
+###
+
+|------------Benchmark Name------------|-Trials-|-------Time-------|
+BenchmarkMultiplySerial100-4            20000000          99.3 ns/op
+BenchmarkMultiplySerial100-6            20000000          98.8 ns/op
+BenchmarkMultiplySerial100-8            20000000          99.5 ns/op
+BenchmarkMultiplySerial200-4            20000000           119 ns/op
+BenchmarkMultiplySerial200-6            20000000           118 ns/op
+BenchmarkMultiplySerial200-8            20000000           120 ns/op
+BenchmarkMultiplySerial300-4            10000000           209 ns/op
+BenchmarkMultiplySerial300-6            10000000           210 ns/op
+BenchmarkMultiplySerial300-8            10000000           214 ns/op
+BenchmarkMultiplySerial400-4                  20      99761505 ns/op
+BenchmarkMultiplySerial400-6                  20     102093339 ns/op
+BenchmarkMultiplySerial400-8                  20     105588216 ns/op
+BenchmarkMultiplySerial500-4                  20      97807034 ns/op
+BenchmarkMultiplySerial500-6                  20      98436085 ns/op
+BenchmarkMultiplySerial500-8                  20      97397526 ns/op
+BenchmarkMultiplySerial600-4                  10     167947010 ns/op
+BenchmarkMultiplySerial600-6                  10     167681428 ns/op
+BenchmarkMultiplySerial600-8                  10     167273770 ns/op
+BenchmarkMultiplySerial700-4                   5     164851359 ns/op
+BenchmarkMultiplySerial700-6                   5     265900457 ns/op
+BenchmarkMultiplySerial700-8                   5     265426407 ns/op
+BenchmarkMultiplySerial800-4                   5     396063496 ns/op
+BenchmarkMultiplySerial800-6                   5     395576527 ns/op
+BenchmarkMultiplySerial800-8                   5     395498164 ns/op
+BenchmarkMultiplySerial900-4                   2     569451181 ns/op
+BenchmarkMultiplySerial900-6                   2     577145442 ns/op
+BenchmarkMultiplySerial900-8                   2     569336575 ns/op
+BenchmarkMultiplySerial1000-4                  2     784346706 ns/op
+BenchmarkMultiplySerial1000-6                  2     785939321 ns/op
+BenchmarkMultiplySerial1000-8                  2     796239772 ns/op
+BenchmarkMultiplyParallelNaive100-4      1000000          4016 ns/op
+BenchmarkMultiplyParallelNaive100-6      1000000          3785 ns/op
+BenchmarkMultiplyParallelNaive100-8       500000          4365 ns/op
+BenchmarkMultiplyParallelNaive200-4       500000          2651 ns/op
+BenchmarkMultiplyParallelNaive200-6       500000          2647 ns/op
+BenchmarkMultiplyParallelNaive200-8      1000000          1997 ns/op
+BenchmarkMultiplyParallelNaive300-4      1000000          3002 ns/op
+BenchmarkMultiplyParallelNaive300-6       500000          3476 ns/op
+BenchmarkMultiplyParallelNaive300-8      1000000          3497 ns/op
+BenchmarkMultiplyParallelNaive400-4          100      21074647 ns/op
+BenchmarkMultiplyParallelNaive400-6          100      17901939 ns/op
+BenchmarkMultiplyParallelNaive400-8          100      17837782 ns/op
+BenchmarkMultiplyParallelNaive500-4           50      41016904 ns/op
+BenchmarkMultiplyParallelNaive500-6           50      34713470 ns/op
+BenchmarkMultiplyParallelNaive500-8           50      33836775 ns/op
+BenchmarkMultiplyParallelNaive600-4           50      93872914 ns/op
+BenchmarkMultiplyParallelNaive600-6           50      62855275 ns/op
+BenchmarkMultiplyParallelNaive600-8           50      59226103 ns/op
+BenchmarkMultiplyParallelNaive700-4           20     110259828 ns/op
+BenchmarkMultiplyParallelNaive700-6           20      90986734 ns/op
+BenchmarkMultiplyParallelNaive700-8           20      94021277 ns/op
+BenchmarkMultiplyParallelNaive800-4           10     172119061 ns/op
+BenchmarkMultiplyParallelNaive800-6           10     134205870 ns/op
+BenchmarkMultiplyParallelNaive800-8           10     143233189 ns/op
+BenchmarkMultiplyParallelNaive900-4            5     298691525 ns/op
+BenchmarkMultiplyParallelNaive900-6           10     205746086 ns/op
+BenchmarkMultiplyParallelNaive900-8           10     204324195 ns/op
+BenchmarkMultiplyParallelNaive1000-4           5     363710725 ns/op
+BenchmarkMultiplyParallelNaive1000-6           5     307003085 ns/op
+BenchmarkMultiplyParallelNaive1000-8           5     288327130 ns/op
+BenchmarkMultiplyParallelRecursive100-4  1000000          1317 ns/op
+BenchmarkMultiplyParallelRecursive100-6  1000000          1312 ns/op
+BenchmarkMultiplyParallelRecursive100-8  1000000          1308 ns/op
+BenchmarkMultiplyParallelRecursive200-4  1000000          1509 ns/op
+BenchmarkMultiplyParallelRecursive200-6  1000000          1367 ns/op
+BenchmarkMultiplyParallelRecursive200-8  1000000          1346 ns/op
+BenchmarkMultiplyParallelRecursive300-4  1000000          1868 ns/op
+BenchmarkMultiplyParallelRecursive300-6  1000000          1838 ns/op
+BenchmarkMultiplyParallelRecursive300-8  1000000          1711 ns/op
+BenchmarkMultiplyParallelRecursive400-4       50      59863142 ns/op
+BenchmarkMultiplyParallelRecursive400-6       50      44367134 ns/op
+BenchmarkMultiplyParallelRecursive400-8       50      41711627 ns/op
+BenchmarkMultiplyParallelRecursive500-4       20      98767981 ns/op
+BenchmarkMultiplyParallelRecursive500-6       20      84789085 ns/op
+BenchmarkMultiplyParallelRecursive500-8       20      81606909 ns/op
+BenchmarkMultiplyParallelRecursive600-4       10     179861610 ns/op
+BenchmarkMultiplyParallelRecursive600-6       10     146964769 ns/op
+BenchmarkMultiplyParallelRecursive600-8       10     138422147 ns/op
+BenchmarkMultiplyParallelRecursive700-4        5     280103848 ns/op
+BenchmarkMultiplyParallelRecursive700-6       10     241514586 ns/op
+BenchmarkMultiplyParallelRecursive700-8       10     226854082 ns/op
+BenchmarkMultiplyParallelRecursive800-4        5     508307211 ns/op
+BenchmarkMultiplyParallelRecursive800-6        5     354467118 ns/op
+BenchmarkMultiplyParallelRecursive800-8        5     328658993 ns/op
+BenchmarkMultiplyParallelRecursive900-4        2     528134573 ns/op
+BenchmarkMultiplyParallelRecursive900-6        5     482200840 ns/op
+BenchmarkMultiplyParallelRecursive900-8        5     468827937 ns/op
+BenchmarkMultiplyParallelRecursive1000-4       2     803038928 ns/op
+BenchmarkMultiplyParallelRecursive1000-6       2     673300908 ns/op
+BenchmarkMultiplyParallelRecursive1000-8       2     654892840 ns/op
+
+###
+# Benchmarks to determine the threshold for the recursive solution
+# 
+###
+
+BenchmarkThreshold-4           1    42973760182 ns/op
+--- BENCH: BenchmarkThreshold-4
+    matrix_test.go:290: Benchmarking threshold values.
+    matrix_test.go:300: 20:     5.977857
+    matrix_test.go:300: 30:     6.532900
+    matrix_test.go:300: 40:     5.682251
+    matrix_test.go:300: 50:     5.314913
+    matrix_test.go:300: 60:     5.097790
+    matrix_test.go:300: 70:     4.630471
+    matrix_test.go:300: 80:     5.593228
+    matrix_test.go:300: 90:     4.130827
+BenchmarkThreshold-6           1    35649467727 ns/op
+--- BENCH: BenchmarkThreshold-6
+    matrix_test.go:290: Benchmarking threshold values.
+    matrix_test.go:300: 20:     4.826607
+    matrix_test.go:300: 30:     4.856382
+    matrix_test.go:300: 40:     4.283971
+    matrix_test.go:300: 50:     4.308040
+    matrix_test.go:300: 60:     4.318135
+    matrix_test.go:300: 70:     4.326226
+    matrix_test.go:300: 80:     4.358114
+    matrix_test.go:300: 90:     4.358362
+BenchmarkThreshold-8           1    34232397625 ns/op
+--- BENCH: BenchmarkThreshold-8
+    matrix_test.go:290: Benchmarking threshold values.
+    matrix_test.go:300: 20:     4.638648
+    matrix_test.go:300: 30:     4.682375
+    matrix_test.go:300: 40:     4.098548
+    matrix_test.go:300: 50:     4.143398
+    matrix_test.go:300: 60:     4.153011
+    matrix_test.go:300: 70:     4.182269
+    matrix_test.go:300: 80:     4.146563
+    matrix_test.go:300: 90:     4.173959
+ok      _/home/jordon/final-335/matrix  305.875s

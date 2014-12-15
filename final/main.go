@@ -17,6 +17,5 @@ func main() {
 		log.Fatalf("Number of cores selected (%d) exceeds the number of cores"+
 			" available (%d).\n", cores, nCPU)
 	}
-	fmt.Printf("You have selected %d of %d virtual cores\n", cores,
-		runtime.NumCPU())
+	fmt.Printf("You have selected %d of %d virtual cores\n", cores, nCPU)
 }
